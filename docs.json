@@ -1,68 +1,70 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Akdeniz CSE AI Assistant",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#007AFF",
+    "light": "#4DA3FF",
+    "dark": "#0055CC"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "architecture"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Backend",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "backend/overview",
+              "backend/llm-engine",
+              "backend/api-routes"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Data Pipeline",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "data-pipeline/overview"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "WhatsApp Bot",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "whatsapp/overview"
+            ]
+          },
+          {
+            "group": "Design Patterns",
+            "pages": [
+              "patterns/overview",
+              "patterns/strategy",
+              "patterns/singleton",
+              "patterns/factory"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/overview"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Endpoints",
             "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/chat"
             ]
           }
         ]
@@ -105,11 +107,7 @@
      "copy",
      "view",
      "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
+     "claude"
    ]
   },
   "footer": {
