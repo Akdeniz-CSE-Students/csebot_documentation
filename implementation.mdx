@@ -1,0 +1,49 @@
+---
+title: "Implementation"
+description: "Details on the technology stack and code structure."
+---
+
+## Tech Stack
+
+*   **Language**: Python 3.10+ (Backend/Pipeline), Node.js (WhatsApp)
+*   **Framework**: FastAPI (High performance, easy async)
+*   **Database**: MongoDB (Flexible schema for JSON logs and menus)
+*   **AI/ML**:
+    *   **Google Gemini 2.5 Flash**: For high-logic chat and image processing.
+    *   **Ollama (Qwen2 7B)**: For fast, private intent classification.
+    *   **TheFuzz**: For fuzzy string matching.
+
+## Folder Structure
+
+```text
+├── backend/
+│   ├── app/
+│   │   ├── api/routes/       # API Endpoints (Chat, Dining)
+│   │   ├── core/             # Config & Settings
+│   │   ├── db/               # MongoDB Singleton
+│   │   ├── llm_engine/       # AI Logic & Classifiers (Strategy Pattern)
+│   │   └── services/         # Business Logic Layer
+│   └── main.py               # Entry point
+├── data-pipeline/
+│   ├── crawlers/             # Scrapers for SKS/CSE
+│   ├── jobs/                 # Scheduled tasks
+│   └── services/             # Image-to-JSON extraction
+└── whatsapp/
+    ├── src/
+    │   ├── client/           # WPPConnect Logic
+    │   └── services/         # HTTP Client for Backend
+    └── index.js
+```
+
+## Key Components
+
+### 1. The Intent Classifier
+Located in `backend/app/llm_engine/classifier.py`. It uses a **Factory Method** (`get_classifier()`) to instantiate the Singleton classifier based on `.env` settings (`ollama`, `fuzzy`, or `hybrid`).
+
+### 2. The Data Pipeline
+The pipeline (`data-pipeline/jobs/run_scheduler.py`) is designed to run autonomously.
+*   **Menu Sync**: Downloads the dining list image -> Sends to Gemini -> Returns JSON -> Saves to Mongo.
+*   **Announcement Sync**: Scrapes Titles/Links -> Checks existence in Mongo -> Inserts new ones.
+
+### 3. WhatsApp Integration
+The Node.js service uses `@wppconnect-team/wppconnect`. It acts as a "dumb terminal" that just forwards messages to the smarter Python backend. This separation concerns allows us to update the AI logic without restarting the WhatsApp connection (which requires QR scanning).

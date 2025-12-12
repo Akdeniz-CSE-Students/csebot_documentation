@@ -1,0 +1,77 @@
+---
+title: "Architecture"
+description: "High-level system design and data flow."
+---
+
+## System Overview
+
+The project consists of three main independent subsystems communicating via APIs and a shared database.
+
+1.  **Backend API (FastAPI)**: The brain of the operation. Handles logic, database access, and AI processing.
+2.  **WhatsApp Client (Node.js)**: A bridge that listens to WhatsApp messages and forwards them to the backend.
+3.  **Data Pipeline (Python)**: Background scheduled jobs that scrape websites (SKS, CSE) and update the database.
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    User((User)) <-->|WhatsApp| WA[WhatsApp Client Node.js]
+    
+    subgraph "Backend Core"
+        WA <-->|REST API| API[FastAPI Backend]
+        API -->|Strategy| CL[Intent Classifier]
+        CL -.->|Option A| OLL[Ollama / Local LLM]
+        CL -.->|Option B| GEM[Gemini / Cloud LLM]
+        API <-->|Read/Write| DB[(MongoDB)]
+    end
+
+    subgraph "Data Pipeline"
+        Crawler[Web Crawler] -->|Scrape| Websites[University Sites]
+        Crawler -->|Update| DB
+        Scheduler[Cron Job] -->|Trigger| Crawler
+    end
+```
+
+## Class Diagram (Simplified)
+
+This diagram illustrates the **Strategy Pattern** used for classification.
+
+```mermaid
+classDiagram
+    class IntentClassifier {
+        <<interface>>
+        +classify(message: str) str
+    }
+
+    class FuzzyClassifier {
+        +keywords: List[str]
+        +classify(message: str) str
+    }
+
+    class OllamaClassifier {
+        +model: str
+        +classify(message: str) str
+    }
+
+    class HybridClassifier {
+        +primary: IntentClassifier
+        +fallback: IntentClassifier
+        +classify(message: str) str
+    }
+
+    IntentClassifier <|.. FuzzyClassifier
+    IntentClassifier <|.. OllamaClassifier
+    IntentClassifier <|.. HybridClassifier
+    HybridClassifier o-- IntentClassifier
+```
+
+## Data Flow (Chat)
+
+1.  **User** sends message to WhatsApp Group.
+2.  **WhatsApp Client** listens, filters for target group, and POSTs payload to `/api/chat`.
+3.  **FastAPI** receives request.
+4.  **Classifier** determines if user wants "Food", "Announcements", or "Chat".
+5.  **Service Layer** fetches relevant context (e.g., today's menu) from MongoDB.
+6.  **LLM Engine** constructs a prompt with Context + History + User Query.
+7.  **Response** is generated and sent back to WhatsApp Client.
+8.  **WhatsApp Client** replies to the user.

@@ -1,0 +1,71 @@
+---
+title: "Design Patterns"
+description: "Technical breakdown of the Design Patterns implemented in the codebase."
+---
+
+## 1. Strategy Pattern
+**Problem**: The chatbot needs to determine the user's "intent" (e.g., asking for food, checking announcements, or general chat). We wanted to support multiple ways to do this: simple keyword matching (fast, offline) and advanced LLM analysis (smart, slower), and switch between them easily via configuration.
+
+**Implementation**:
+model/classifiers
+*   **Interface**: `IntentClassifier` (Abstract Base Class) defines the `classify(message)` method.
+*   **Strategies**:
+    *   `FuzzyClassifier`: Uses Levenshtein distance for keyword matching.
+    *   `OllamaClassifier`: Uses a local LLM (Qwen) to analyze semantics.
+    *   `HybridClassifier`: Tries Ollama first, falls back to Fuzzy if it fails/timeouts.
+
+**Code Reference**: `backend/app/llm_engine/classifiers/`
+
+```python
+# Context: The application selects strict strategy at runtime
+class HybridClassifier(IntentClassifier):
+    def __init__(self, primary, fallback):
+        self.primary = primary
+        self.fallback = fallback
+
+    async def classify(self, message):
+        try:
+            return await self.primary.classify(message)
+        except Exception:
+            return await self.fallback.classify(message)
+```
+
+## 2. Singleton Pattern
+**Problem**: Creating new database connections or initializing large LLM clients for every single request is resource-intensive and can crash the server under load (e.g., running out of MongoDB connection pool).
+
+**Implementation**:
+We ensure only **one instance** of the Database Client and the Ollama Client exists throughout the application lifecycle.
+
+**Code Reference**:
+*   `backend/app/db/mongo.py`: The `db` object is instantiated once.
+*   `backend/app/llm_engine/clients/ollama_client.py`: The `ollama_client` is a global instance.
+
+```python
+# backend/app/db/mongo.py
+class MongoDB:
+    client = None
+    db = None
+
+# This specific instance is imported everywhere
+db = MongoDB()
+```
+
+## 3. Facade Pattern
+**Problem**: The "Chat" feature involves a complex workflow:
+1.  Saving the user message.
+2.  Classifying intent.
+3.  Fetching context (Menu vs Announcements).
+4.  Fetching history.
+5.  Generating an LLM response with a long system prompt.
+6.  Saving the bot response.
+
+**Implementation**:
+The `chat_endpoint` in `backend/app/api/routes/chat.py` acts as a **Facade**. It presents a simple interface (POST /chat) to the client (WhatsApp/Mobile) while orchestrating all the complex subsystems behind the scenes. The client doesn't need to know about the classifier, the vector DB, or the prompt engineering.
+
+## Summary of Patterns
+
+| Pattern | Category | Usage in Project |
+| :--- | :--- | :--- |
+| **Strategy** | Behavioral | Switching between 'Fuzzy', 'Ollama', and 'Hybrid' intent classifiers. |
+| **Singleton** | Creational | Managing single shared instances for MongoDB and LLM Clients. |
+| **Facade** | Structural | The Chat Endpoint simplifies the complex conversational pipeline for clients. |

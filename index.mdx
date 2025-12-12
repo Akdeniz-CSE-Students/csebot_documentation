@@ -1,97 +1,37 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Project Overview"
+description: "AI-Powered Assistant for Akdeniz University CSE Students"
 ---
 
-## Setting up
+## Problem Statement
+Students often struggle to access scattered information regarding:
+*   Daily dining hall menus.
+*   Department announcements (internships, exams, cancellations).
+*   Quick answers to academic procedures or general queries.
 
-Get your documentation site up and running in minutes.
+Existing solutions require checking multiple websites (SKS, CSE Dept) or asking in WhatsApp groups repeatedly.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## Solution: ChatbotForCse
+A unified **AI-powered chatbot** accessible via WhatsApp and Mobile App. It aggregates data from various sources and uses LLMs to provide intelligent, context-aware responses.
 
-## Make it yours
+### Key Features
+*   **Dining Menus**: Automatically scrapes and parses weekly menus from the SKS website.
+*   **Announcements**: Tracks and delivers the latest department news in real-time.
+*   **Intelligent Q&A**: Uses **Gemini** and **Ollama** to answer general questions (math, coding, regulations).
+*   **Multi-Channel**: Currently live on WhatsApp, with an API ready for mobile integration.
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+## System Capabilities
+<CardGroup cols={2}>
+  <Card title="Intent Recognition" icon="brain">
+    Uses **Strategy Pattern** to dynamically switch between Fuzzy Matching and LLM-based classification for accurate understanding.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Live Data Sync" icon="rotate">
+    Automated pipelines sync menu images and announcement text daily/hourly.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Hybrid LLM Engine" icon="microchip">
+    Combines local models (Ollama/Qwen) for privacy/speed and Cloud models (Gemini) for complex reasoning.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Scalable Architecture" icon="server">
+    Built with **FastAPI** and **MongoDB**, utilizing **Singleton** connections for high performance.
   </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>
