@@ -1,336 +1,80 @@
 ---
-title: "Quick Start Guide"
-description: "Get the Akdeniz CSE AI Assistant running locally in 15 minutes"
-icon: "rocket"
+title: "Quickstart"
+description: "Start building awesome documentation in minutes"
 ---
 
-## Prerequisites
+## Get started in three steps
 
-Before you begin, ensure you have the following installed:
+Get your documentation site running locally and make your first customization.
 
-<CardGroup cols={2}>
-  <Card title="Python 3.10+" icon="python">
-    Download from [python.org](https://www.python.org/)
-  </Card>
-  <Card title="Node.js 19+" icon="node-js">
-    Download from [nodejs.org](https://nodejs.org/)
-  </Card>
-  <Card title="MongoDB" icon="database">
-    Use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free) or local installation
-  </Card>
-  <Card title="Ollama" icon="brain">
-    Install from [ollama.com](https://ollama.com/) for local LLM
-  </Card>
-</CardGroup>
-
-## Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/your-username/ChatbotForCse.git
-cd ChatbotForCse
-```
-
-## Step 2: Set Up Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash .env
-# MongoDB Configuration
-MONGO_CONNECTION_STRING=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
-MONGO_DB_NAME=ChatBotCse
-
-# Gemini API Key (get from https://aistudio.google.com/)
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Ollama Configuration
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen2:7b
-OLLAMA_TIMEOUT=10
-OLLAMA_TEMPERATURE=0.3
-
-# Classification Method: "ollama", "fuzzy", or "hybrid"
-CLASSIFICATION_METHOD=hybrid
-
-# WhatsApp Bot (Optional)
-SESSION_NAME=cse-bot-session
-TARGET_GROUP_NAME=CSE BOT
-PHONE_NUMBER=905551234567
-```
-
-<Warning>
-**Never commit your `.env` file to Git!** Make sure `.env` is in your `.gitignore` file.
-</Warning>
-
-## Step 3: Install Ollama Model
-
-Pull the Qwen2 model for intent classification:
-
-```bash
-ollama pull qwen2:7b
-```
-
-<Tip>
-Ollama must be running for the backend to work. Start it with `ollama serve` if it's not auto-started.
-</Tip>
-
-## Step 4: Set Up MongoDB
-
-<Tabs>
-  <Tab title="MongoDB Atlas (Recommended)">
-    1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-    2. Create a new cluster
-    3. Add your IP to the whitelist (or allow 0.0.0.0/0 for development)
-    4. Create a database user
-    5. Copy the connection string to your `.env` file
-  </Tab>
-  
-  <Tab title="Local MongoDB">
-    ```bash
-    # Using Docker
-    docker-compose up -d mongo
-    
-    # Or install locally and use:
-    # MONGO_CONNECTION_STRING=mongodb://localhost:27017
-    ```
-  </Tab>
-</Tabs>
-
-## Step 5: Start the Backend
-
-```bash
-cd ChatbotForCse
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Start the FastAPI server
-python backend/main.py
-```
-
-You should see:
-```
-INFO:     Started server process
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
-
-<Check>
-**Backend is running!** Visit [http://localhost:8000/docs](http://localhost:8000/docs) to see the Swagger UI.
-</Check>
-
-## Step 6: Start the Data Pipeline (Optional)
-
-The data pipeline scrapes menus and announcements automatically:
-
-```bash
-cd data-pipeline
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the scheduler
-python jobs/run_scheduler.py
-```
-
-<Info>
-The pipeline runs every 30 minutes by default. You can change this in the `.env` file with `SYNC_INTERVAL=1800`.
-</Info>
-
-## Step 7: Test the System
-
-<Tabs>
-  <Tab title="Using cURL">
-    ```bash
-    curl -X POST "http://localhost:8000/api/chat/" \
-      -H "Content-Type: application/json" \
-      -d '{"message": "Bugün yemekte ne var?"}'
-    ```
-    
-    Expected response:
-    ```json
-    {
-      "reply": "🍽️ Bugünün menüsü:\n\n• Çorba: Mercimek\n...",
-      "source": "dining"
-    }
-    ```
-  </Tab>
-  
-  <Tab title="Using Swagger UI">
-    1. Open [http://localhost:8000/docs](http://localhost:8000/docs)
-    2. Click on **POST /api/chat/**
-    3. Click **Try it out**
-    4. Enter test message:
-       ```json
-       {
-         "message": "Bugün yemekte ne var?",
-         "user_id": "test_user"
-       }
-       ```
-    5. Click **Execute**
-  </Tab>
-  
-  <Tab title="Using Python">
-    ```python
-    import requests
-    
-    response = requests.post(
-        "http://localhost:8000/api/chat/",
-        json={"message": "Final sınavları ne zaman?"}
-    )
-    
-    print(response.json())
-    ```
-  </Tab>
-</Tabs>
-
-## Step 8: Run the Mobile App (Optional)
-
-<Steps>
-  <Step title="Navigate to mobile-app directory">
-    ```bash
-    cd mobile-app
-    ```
-  </Step>
-  
-  <Step title="Install dependencies">
-    ```bash
-    npm install
-    ```
-  </Step>
-  
-  <Step title="Update API URL">
-    Edit `src/core/config.ts`:
-    ```typescript
-    const DEV_API_URL = 'http://YOUR_COMPUTER_IP:8000';
-    ```
-    
-    <Warning>
-    Don't use `localhost` - use your computer's local IP (e.g., `192.168.1.100`)
-    </Warning>
-  </Step>
-  
-  <Step title="Start Expo">
-    ```bash
-    npx expo start
-    ```
-    
-    Scan the QR code with:
-    - **iOS**: Camera app
-    - **Android**: Expo Go app
-  </Step>
-</Steps>
-
-## Step 9: Set Up WhatsApp Bot (Optional)
+### Step 1: Set up your local environment
 
 <AccordionGroup>
-  <Accordion title="Prerequisites" icon="check">
-    - A dedicated phone number for WhatsApp
-    - WhatsApp installed on that phone
-    - Node.js installed
+  <Accordion icon="copy" title="Clone your docs locally">
+    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+    
+    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
   </Accordion>
-  
-  <Accordion title="Installation Steps" icon="list">
-    ```bash
-    cd whatsapp
+  <Accordion icon="rectangle-terminal" title="Start the preview server">
+    1. Install the Mintlify CLI: `npm i -g mint`
+    2. Navigate to your docs directory and run: `mint dev`
+    3. Open `http://localhost:3000` to see your docs live!
     
-    # Install dependencies
-    npm install
-    
-    # Start the bot
-    npm start
-    ```
-    
-    **Scan the QR code** that appears in the terminal with WhatsApp.
-  </Accordion>
-  
-  <Accordion title="Configuration" icon="gear">
-    Update `TARGET_GROUP_NAME` in `.env` to match your WhatsApp group:
-    ```
-    TARGET_GROUP_NAME=CSE BOT
-    ```
+    <Tip>Your preview updates automatically as you edit files.</Tip>
   </Accordion>
 </AccordionGroup>
 
-## Verify Installation
-
-<Checks>
-  <Check>Backend API responds at http://localhost:8000</Check>
-  <Check>Swagger UI accessible at http://localhost:8000/docs</Check>
-  <Check>Ollama service running (test with `ollama list`)</Check>
-  <Check>MongoDB connection successful</Check>
-  <Check>Intent classification working (test via /api/chat/)</Check>
-  <Check>Data pipeline scraping (optional)</Check>
-  <Check>Mobile app connected to backend (optional)</Check>
-  <Check>WhatsApp bot responding (optional)</Check>
-</Checks>
-
-## Troubleshooting
+### Step 2: Deploy your changes
 
 <AccordionGroup>
-  <Accordion title="Backend won't start" icon="triangle-exclamation">
-    **Issue:** `ModuleNotFoundError` or import errors
+  <Accordion icon="github" title="Install our GitHub app">
+    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
     
-    **Solution:**
-    ```bash
-    # Reinstall dependencies
-    pip install --upgrade -r requirements.txt
-    
-    # Make sure you're using Python 3.10+
-    python --version
-    ```
-  </Accordion>
-  
-  <Accordion title="Ollama connection failed" icon="robot">
-    **Issue:** `Connection refused` to Ollama
-    
-    **Solution:**
-    ```bash
-    # Check if Ollama is running
-    ollama serve
-    
-    # In another terminal, test:
-    ollama run qwen2:7b "Test message"
-    ```
-  </Accordion>
-  
-  <Accordion title="MongoDB connection error" icon="database">
-    **Issue:** `ServerSelectionTimeoutError`
-    
-    **Solution:**
-    - Check your connection string in `.env`
-    - Verify IP whitelist in MongoDB Atlas
-    - Test connection: `mongosh "your_connection_string"`
-  </Accordion>
-  
-  <Accordion title="Mobile app can't connect" icon="mobile">
-    **Issue:** Network error or timeout
-    
-    **Solution:**
-    - Use your computer's local IP, not `localhost`
-    - Ensure phone and computer are on same network
-    - Check firewall settings (allow port 8000)
-    - Restart the Expo dev server
+    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+</Accordion>
+<Accordion icon="palette" title="Update your site name and colors">
+    For a first change, let's update the name and colors of your docs site.
+
+    1. Open `docs.json` in your editor.
+    2. Change the `"name"` field to your project name.
+    3. Update the `"colors"` to match your brand.
+    4. Save and see your changes instantly at `http://localhost:3000`.
+
+    <Tip>Try changing the primary color to see an immediate difference!</Tip>
   </Accordion>
 </AccordionGroup>
 
-## Next Steps
+### Step 3: Go live
+
+<Accordion icon="rocket" title="Publish your docs">
+  1. Commit and push your changes.
+  2. Your docs will update and be live in moments!
+</Accordion>
+
+## Next steps
+
+Now that you have your docs running, explore these key features:
 
 <CardGroup cols={2}>
-  <Card title="Architecture Overview" icon="diagram-project" href="/architecture">
-    Understand the system design
-  </Card>
-  <Card title="Backend API" icon="server" href="/backend/overview">
-    Explore the FastAPI implementation
-  </Card>
-  <Card title="Design Patterns" icon="puzzle-piece" href="/patterns/overview">
-    Learn about patterns used
-  </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/chat">
-    Browse the REST API
-  </Card>
+
+<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
+  Learn MDX syntax and start writing your documentation.
+</Card>
+
+<Card title="Customize style" icon="palette" href="/essentials/settings">
+  Make your docs match your brand perfectly.
+</Card>
+
+<Card title="Add code examples" icon="square-code" href="/essentials/code">
+  Include syntax-highlighted code blocks.
+</Card>
+
+<Card title="API documentation" icon="code" href="/api-reference/introduction">
+  Auto-generate API docs from OpenAPI specs.
+</Card>
+
 </CardGroup>
 
 <Note>
-**Pro Tip:** Start with just the backend first, then add components incrementally. You don't need everything running at once for development!
+  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
 </Note>
