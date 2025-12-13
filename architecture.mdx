@@ -1,77 +1,233 @@
 ---
 title: "Architecture"
-description: "High-level system design and data flow."
+description: "System architecture, data flow, and component interactions"
 ---
 
 ## System Overview
 
-The project consists of three main independent subsystems communicating via APIs and a shared database.
-
-1.  **Backend API (FastAPI)**: The brain of the operation. Handles logic, database access, and AI processing.
-2.  **WhatsApp Client (Node.js)**: A bridge that listens to WhatsApp messages and forwards them to the backend.
-3.  **Data Pipeline (Python)**: Background scheduled jobs that scrape websites (SKS, CSE) and update the database.
-
-## Architecture Diagram
+ChatbotForCse consists of **three independent subsystems** communicating via REST APIs and a shared MongoDB database.
 
 ```mermaid
 graph TD
-    User((User)) <-->|WhatsApp| WA[WhatsApp Client Node.js]
+    subgraph "External Interfaces"
+        User((User))
+        WA[WhatsApp]
+        SKS[SKS Website]
+        CSE[CSE Website]
+    end
     
-    subgraph "Backend Core"
-        WA <-->|REST API| API[FastAPI Backend]
-        API -->|Strategy| CL[Intent Classifier]
-        CL -.->|Option A| OLL[Ollama / Local LLM]
-        CL -.->|Option B| GEM[Gemini / Cloud LLM]
-        API <-->|Read/Write| DB[(MongoDB)]
+    subgraph "Core System"
+        WAClient[WhatsApp Client<br/>Node.js]
+        API[FastAPI Backend]
+        Pipeline[Data Pipeline<br/>Python]
     end
-
-    subgraph "Data Pipeline"
-        Crawler[Web Crawler] -->|Scrape| Websites[University Sites]
-        Crawler -->|Update| DB
-        Scheduler[Cron Job] -->|Trigger| Crawler
+    
+    subgraph "AI/ML"
+        Gemini[Google Gemini]
+        Ollama[Ollama/Qwen]
     end
+    
+    DB[(MongoDB)]
+    
+    User <-->|Messages| WA
+    WA <-->|WPPConnect| WAClient
+    WAClient <-->|REST API| API
+    
+    API <-->|Intent Classification| Ollama
+    API <-->|Response Generation| Gemini
+    API <-->|CRUD| DB
+    
+    Pipeline -->|Scrape| SKS
+    Pipeline -->|Scrape| CSE
+    Pipeline -->|Update| DB
 ```
 
-## Class Diagram (Simplified)
+---
 
-This diagram illustrates the **Strategy Pattern** used for classification.
+## Layered Architecture
+
+The backend follows a clean **4-layer architecture**:
 
 ```mermaid
-classDiagram
-    class IntentClassifier {
-        <<interface>>
-        +classify(message: str) str
-    }
-
-    class FuzzyClassifier {
-        +keywords: List[str]
-        +classify(message: str) str
-    }
-
-    class OllamaClassifier {
-        +model: str
-        +classify(message: str) str
-    }
-
-    class HybridClassifier {
-        +primary: IntentClassifier
-        +fallback: IntentClassifier
-        +classify(message: str) str
-    }
-
-    IntentClassifier <|.. FuzzyClassifier
-    IntentClassifier <|.. OllamaClassifier
-    IntentClassifier <|.. HybridClassifier
-    HybridClassifier o-- IntentClassifier
+graph TB
+    subgraph "API Layer"
+        A1["/api/chat"]
+        A2["/api/dining"]
+    end
+    
+    subgraph "Service Layer"
+        S1[chat_service.py]
+        S2[dining_service.py]
+    end
+    
+    subgraph "Domain Layer"
+        D1[IntentClassifier<br/>Strategy Pattern]
+        D2[ContextStrategy<br/>Strategy Pattern]
+        D3[LLM Engine]
+    end
+    
+    subgraph "Data Access Layer"
+        DA1[MongoDB Singleton]
+        DA2[OllamaClient Singleton]
+    end
+    
+    A1 --> S1
+    A2 --> S2
+    S1 --> D1
+    S1 --> D2
+    S1 --> D3
+    D1 --> DA2
+    D2 --> DA1
+    D3 --> DA1
 ```
 
-## Data Flow (Chat)
+| Layer | Responsibility | Files |
+|-------|----------------|-------|
+| **API** | HTTP endpoints, request/response | `api/routes/chat.py` |
+| **Service** | Business logic orchestration | `services/chat_service.py` |
+| **Domain** | Core algorithms, AI logic | `llm_engine/`, `strategies/` |
+| **Data Access** | Database, external clients | `db/mongo.py`, `clients/` |
 
-1.  **User** sends message to WhatsApp Group.
-2.  **WhatsApp Client** listens, filters for target group, and POSTs payload to `/api/chat`.
-3.  **FastAPI** receives request.
-4.  **Classifier** determines if user wants "Food", "Announcements", or "Chat".
-5.  **Service Layer** fetches relevant context (e.g., today's menu) from MongoDB.
-6.  **LLM Engine** constructs a prompt with Context + History + User Query.
-7.  **Response** is generated and sent back to WhatsApp Client.
-8.  **WhatsApp Client** replies to the user.
+---
+
+## Design Pattern Locations
+
+```mermaid
+flowchart LR
+    subgraph "Strategy Pattern"
+        IC[IntentClassifier]
+        CS[ContextStrategy]
+    end
+    
+    subgraph "Factory Pattern"
+        CF[ClassifierFactory<br/>classifier.py]
+        SF[StrategyFactory<br/>context_strategies.py]
+    end
+    
+    subgraph "Singleton Pattern"
+        MDB[MongoDB<br/>db/mongo.py]
+        OC[OllamaClient<br/>clients/ollama_client.py]
+    end
+    
+    CF --> IC
+    SF --> CS
+    IC -.->|uses| OC
+    CS -.->|uses| MDB
+```
+
+---
+
+## Chat Request Data Flow
+
+Detailed sequence of a chat request through the system:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant WA as WhatsApp
+    participant WAC as WA Client
+    participant API as FastAPI
+    participant CL as Classifier
+    participant ST as Strategy
+    participant DB as MongoDB
+    participant LLM as Gemini
+
+    U->>WA: "bugün menüde ne var?"
+    WA->>WAC: Message Event
+    WAC->>API: POST /api/chat
+    
+    Note over API: Factory Pattern
+    API->>CL: get_classifier().classify()
+    CL-->>API: intent = "dining"
+    
+    Note over API: Factory Pattern
+    API->>ST: get_context_strategy("dining").fetch()
+    
+    Note over ST,DB: Singleton Pattern
+    ST->>DB: fetch_dining_data_raw()
+    DB-->>ST: List[Dict]
+    ST-->>API: formatted_context
+    
+    API->>LLM: generate(context + query)
+    LLM-->>API: response
+    
+    API->>DB: save_message()
+    API-->>WAC: ChatResponse
+    WAC-->>WA: Reply
+    WA-->>U: "Bugün köfte var..."
+```
+
+---
+
+## Component Diagram
+
+```mermaid
+graph TB
+    subgraph "Backend [Python/FastAPI]"
+        Router[API Router]
+        Service[Chat Service]
+        Classifier[Intent Classifier]
+        Strategy[Context Strategy]
+        LLM[LLM Engine]
+    end
+    
+    subgraph "WhatsApp Client [Node.js]"
+        WPP[WPPConnect]
+        HTTP[HTTP Client]
+    end
+    
+    subgraph "Data Pipeline [Python]"
+        Scheduler[Cron Scheduler]
+        Crawler[Web Crawler]
+        Parser[Image Parser]
+    end
+    
+    subgraph "External Services"
+        Gemini[Google Gemini API]
+        Ollama[Ollama Server]
+        MongoDB[(MongoDB)]
+    end
+    
+    WPP --> HTTP
+    HTTP --> Router
+    Router --> Service
+    Service --> Classifier
+    Service --> Strategy
+    Service --> LLM
+    
+    Classifier --> Ollama
+    LLM --> Gemini
+    Strategy --> MongoDB
+    
+    Scheduler --> Crawler
+    Crawler --> Parser
+    Parser --> Gemini
+    Parser --> MongoDB
+```
+
+---
+
+## Directory Structure
+
+```
+ChatbotForCse/
+├── backend/
+│   ├── app/
+│   │   ├── api/routes/           # API endpoints
+│   │   ├── core/                 # Settings & config
+│   │   ├── db/                   # MongoDB Singleton
+│   │   ├── llm_engine/
+│   │   │   ├── classifiers/      # Strategy Pattern
+│   │   │   └── clients/          # Singleton clients
+│   │   ├── services/             # Business logic
+│   │   └── strategies/           # Context Strategy Pattern
+│   └── main.py
+├── data-pipeline/
+│   ├── crawlers/                 # SKS/CSE scrapers
+│   ├── jobs/                     # Scheduled tasks
+│   └── services/                 # Image processing
+├── whatsapp/
+│   └── src/                      # Node.js WPPConnect
+└── documentation/                # Mintlify docs
+```

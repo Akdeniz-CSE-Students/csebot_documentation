@@ -1,37 +1,89 @@
 ---
 title: "Project Overview"
-description: "AI-Powered Assistant for Akdeniz University CSE Students"
+description: "AI-Powered Assistant for Akdeniz University CSE Students - Design Patterns Term Project"
+---
+
+## CSE-351 Design Patterns Term Project
+
+**ChatbotForCse** is an AI-powered assistant designed for Akdeniz University Computer Science students. This project demonstrates the practical application of **three core design patterns**: Strategy, Factory, and Singleton.
+
+<CardGroup cols={2}>
+  <Card title="Strategy Pattern" icon="arrows-split-up-and-left">
+    Dynamic algorithm selection for intent classification and context fetching.
+  </Card>
+  <Card title="Factory Pattern" icon="industry">
+    OCP-compliant object creation with dictionary-based registry.
+  </Card>
+  <Card title="Singleton Pattern" icon="database">
+    Thread-safe resource management for database and LLM clients.
+  </Card>
+  <Card title="Layered Architecture" icon="layer-group">
+    Clean separation of API, Service, Domain, and Data layers.
+  </Card>
+</CardGroup>
+
 ---
 
 ## Problem Statement
-Students often struggle to access scattered information regarding:
-*   Daily dining hall menus.
-*   Department announcements (internships, exams, cancellations).
-*   Quick answers to academic procedures or general queries.
 
-Existing solutions require checking multiple websites (SKS, CSE Dept) or asking in WhatsApp groups repeatedly.
+Students at Akdeniz University often struggle to access scattered information:
+
+| Problem | Current Solution | Our Solution |
+|---------|------------------|--------------|
+| **Daily dining menus** | Check SKS website manually | Automated scraping + AI Q&A |
+| **Department announcements** | Monitor CSE website | Real-time sync + intelligent search |
+| **Academic questions** | Ask in WhatsApp groups | AI-powered instant responses |
+
+> [!NOTE]
+> Existing solutions require checking multiple websites or asking repetitive questions in group chats.
+
+---
 
 ## Solution: ChatbotForCse
-A unified **AI-powered chatbot** accessible via WhatsApp and Mobile App. It aggregates data from various sources and uses LLMs to provide intelligent, context-aware responses.
+
+A unified **AI-powered chatbot** accessible via WhatsApp and Mobile App. It aggregates data from university sources and uses LLMs for context-aware responses.
 
 ### Key Features
-*   **Dining Menus**: Automatically scrapes and parses weekly menus from the SKS website.
-*   **Announcements**: Tracks and delivers the latest department news in real-time.
-*   **Intelligent Q&A**: Uses **Gemini** and **Ollama** to answer general questions (math, coding, regulations).
-*   **Multi-Channel**: Currently live on WhatsApp, with an API ready for mobile integration.
 
-## System Capabilities
-<CardGroup cols={2}>
-  <Card title="Intent Recognition" icon="brain">
-    Uses **Strategy Pattern** to dynamically switch between Fuzzy Matching and LLM-based classification for accurate understanding.
-  </Card>
-  <Card title="Live Data Sync" icon="rotate">
-    Automated pipelines sync menu images and announcement text daily/hourly.
-  </Card>
-  <Card title="Hybrid LLM Engine" icon="microchip">
-    Combines local models (Ollama/Qwen) for privacy/speed and Cloud models (Gemini) for complex reasoning.
-  </Card>
-  <Card title="Scalable Architecture" icon="server">
-    Built with **FastAPI** and **MongoDB**, utilizing **Singleton** connections for high performance.
-  </Card>
-</CardGroup>
+*   🍽️ **Dining Menus**: Scrapes weekly menus from SKS, parses images using Gemini Vision
+*   📢 **Announcements**: Tracks and delivers department news in real-time
+*   🤖 **Intelligent Q&A**: Uses Gemini and Ollama for general questions
+*   📱 **Multi-Channel**: Live on WhatsApp, API ready for mobile
+
+---
+
+## Design Pattern Integration
+
+This project showcases how design patterns solve real problems:
+
+```mermaid
+flowchart LR
+    subgraph "User Request"
+        A[Message] --> B{Intent?}
+    end
+    
+    subgraph "Strategy Pattern"
+        B --> C[FuzzyClassifier]
+        B --> D[OllamaClassifier]
+        B --> E[HybridClassifier]
+    end
+    
+    subgraph "Factory Pattern"
+        F[get_classifier] --> C
+        F --> D
+        F --> E
+    end
+    
+    subgraph "Singleton"
+        G[(MongoDB)]
+        H[OllamaClient]
+    end
+```
+
+**Why These Patterns?**
+
+| Pattern | Problem Solved | Benefit |
+|---------|----------------|---------|
+| **Strategy** | Multiple classification algorithms needed | Runtime flexibility, easy testing |
+| **Factory** | Complex object creation logic | OCP compliance, centralized creation |
+| **Singleton** | Expensive resource initialization | Connection pooling, thread safety |
