@@ -1,0 +1,122 @@
+---
+title: "Factory Pattern"
+description: "Creational pattern for OCP-compliant object creation"
+icon: "industry"
+---
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Category" icon="tag">
+    **Creational** Design Pattern
+  </Card>
+  <Card title="Purpose" icon="bullseye">
+    Encapsulate object creation logic
+  </Card>
+</CardGroup>
+
+---
+
+## Problem Statement
+
+<AccordionGroup>
+  <Accordion title="The Challenge" icon="circle-question" defaultOpen>
+    We need to create different classifier and strategy objects based on runtime configuration:
+
+    1. **Encapsulate creation logic**: Complex initialization
+    2. **OCP Compliance**: Add new types without modifying factory code
+    3. **Centralized creation**: Single point of change
+  </Accordion>
+
+  <Accordion title="OCP Demonstration" icon="unlock">
+    **Adding a new classifier requires ONLY:**
+    ```python
+    # Step 1: Create factory function
+    def _create_bert_classifier() -> IntentClassifier:
+        return BertClassifier(model="bert-base-turkish")
+
+    # Step 2: Add to registry (NO changes to get_classifier!)
+    CLASSIFIER_MAP["bert"] = _create_bert_classifier
+    ```
+    ✅ Open for extension, closed for modification
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solution: Dictionary Map Factory
+
+<Tabs>
+  <Tab title="Flowchart" icon="diagram-project">
+    ```mermaid
+    flowchart TD
+        subgraph "Factory Pattern with Registry"
+            Config[".env: CLASSIFICATION_METHOD=hybrid"]
+            Factory["get_classifier()"]
+            Map["CLASSIFIER_MAP Dictionary"]
+            
+            Config --> Factory
+            Factory --> Map
+            Map --> |"ollama"| F1["OllamaClassifier"]
+            Map --> |"fuzzy"| F2["FuzzyClassifier"]
+            Map --> |"hybrid"| F3["HybridClassifier"]
+        end
+    ```
+  </Tab>
+  <Tab title="Classifier Factory" icon="code">
+    ```python
+    CLASSIFIER_MAP: dict[str, Callable[[], IntentClassifier]] = {
+        "ollama": _create_ollama_classifier,
+        "fuzzy": _create_fuzzy_classifier,
+        "hybrid": _create_hybrid_classifier,
+    }
+
+    def get_classifier() -> IntentClassifier:
+        method = settings.CLASSIFICATION_METHOD
+        factory_fn = CLASSIFIER_MAP.get(method, _create_fuzzy_classifier)
+        return factory_fn()
+    ```
+  </Tab>
+  <Tab title="Strategy Factory" icon="code">
+    ```python
+    STRATEGY_MAP: dict[str, type[ContextStrategy]] = {
+        "dining": DiningStrategy,
+        "announcement": AnnouncementStrategy,
+        "general": GeneralStrategy,
+    }
+
+    def get_context_strategy(intent: str) -> ContextStrategy:
+        StrategyClass = STRATEGY_MAP.get(intent, GeneralStrategy)
+        return StrategyClass()  # Fresh instance every call
+    ```
+  </Tab>
+  <Tab title="File Locations" icon="folder">
+    | Factory | File |
+    |---------|------|
+    | `get_classifier()` | `llm_engine/classifier.py` |
+    | `get_context_strategy()` | `strategies/context_strategies.py` |
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Factory vs Singleton**: Factory creates **new instances** on each call. This prevents state leakage between requests.
+</Warning>
+
+---
+
+## Benefits
+
+<CardGroup cols={2}>
+  <Card title="OCP Compliance" icon="lock-open">
+    Add new types by adding to registry only
+  </Card>
+  <Card title="Encapsulation" icon="box">
+    Complex creation logic hidden from client
+  </Card>
+  <Card title="Centralized" icon="bullseye">
+    Single point of change for object creation
+  </Card>
+  <Card title="Configurable" icon="sliders">
+    Runtime selection via environment variables
+  </Card>
+</CardGroup>

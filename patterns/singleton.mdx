@@ -1,0 +1,142 @@
+---
+title: "Singleton Pattern"
+description: "Creational pattern for thread-safe resource management"
+icon: "database"
+---
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Category" icon="tag">
+    **Creational** Design Pattern
+  </Card>
+  <Card title="Purpose" icon="bullseye">
+    Ensure single instance of expensive resources
+  </Card>
+</CardGroup>
+
+---
+
+## Problem Statement
+
+<AccordionGroup>
+  <Accordion title="The Challenge" icon="circle-question" defaultOpen>
+    Creating database connections for every request is:
+
+    | Issue | Impact |
+    |-------|--------|
+    | **Resource-intensive** | Exhausts connection pool |
+    | **Slow** | TCP handshake 50-100ms per connection |
+    | **Dangerous** | Can crash database server |
+  </Accordion>
+
+  <Accordion title="Thread Safety" icon="shield-check">
+    We use **Double-Check Locking** pattern:
+    1. First check (no lock) - Fast path for already-initialized case
+    2. Acquire lock - Slow path for initialization
+    3. Second check (with lock) - Prevent race conditions
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solution: Lazy Singleton
+
+<Tabs>
+  <Tab title="MongoDB Singleton" icon="database">
+    ```python
+    class MongoDB:
+        def __init__(self):
+            self._client: AsyncIOMotorClient | None = None
+            self._db = None
+            self._initialized = False
+        
+        @property
+        def client(self) -> AsyncIOMotorClient:
+            if self._client is None:
+                raise RuntimeError("MongoDB not connected")
+            return self._client
+
+    # Global Singleton Instance
+    db = MongoDB()
+
+    async def connect_to_mongo():
+        """Called once at application startup"""
+        db._client = AsyncIOMotorClient(connection_string)
+        db._initialized = True
+    ```
+  </Tab>
+  <Tab title="OllamaClient Singleton" icon="robot">
+    ```python
+    _ollama_client_instance: Optional[OllamaClient] = None
+    _ollama_client_lock = threading.Lock()
+
+    def get_ollama_client() -> OllamaClient:
+        global _ollama_client_instance
+        
+        # Fast path (no lock)
+        if _ollama_client_instance is not None:
+            return _ollama_client_instance
+        
+        # Slow path (with lock)
+        with _ollama_client_lock:
+            if _ollama_client_instance is None:
+                _ollama_client_instance = OllamaClient(
+                    base_url=settings.OLLAMA_BASE_URL
+                )
+        
+        return _ollama_client_instance
+    ```
+  </Tab>
+  <Tab title="UML Diagram" icon="diagram-project">
+    ```mermaid
+    classDiagram
+        class MongoDB {
+            -_client: AsyncIOMotorClient
+            -_db: Database
+            -_initialized: bool
+            +client: property
+            +db: property
+            +is_connected() bool
+        }
+        
+        class OllamaClient {
+            -base_url: str
+            -model: str
+            +generate(prompt) str
+        }
+        
+        note for MongoDB "Lazy init via connect_to_mongo()"
+        note for OllamaClient "Double-check locking"
+    ```
+  </Tab>
+  <Tab title="File Locations" icon="folder">
+    | Singleton | File |
+    |-----------|------|
+    | `MongoDB` | `db/mongo.py` |
+    | `OllamaClient` | `clients/ollama_client.py` |
+  </Tab>
+</Tabs>
+
+<Tip>
+  **Async Fix**: The `OllamaClient.generate()` uses `run_in_executor` to run blocking SDK calls in a thread pool, preventing Event Loop blocking.
+</Tip>
+
+---
+
+## Benefits
+
+<CardGroup cols={2}>
+  <Card title="Connection Pooling" icon="server">
+    Motor client manages pool of connections
+  </Card>
+  <Card title="Resource Efficiency" icon="leaf">
+    One initialization, reused across requests
+  </Card>
+  <Card title="Thread Safety" icon="shield-check">
+    Double-check locking prevents race conditions
+  </Card>
+  <Card title="Fail-Fast" icon="triangle-exclamation">
+    Errors at startup, not during requests
+  </Card>
+</CardGroup>

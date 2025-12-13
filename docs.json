@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "ChatbotForCse",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#10B981",
+    "light": "#34D399",
+    "dark": "#059669"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -14,11 +14,33 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Project",
+            "group": "Getting Started",
+            "icon": "rocket",
             "pages": [
-              "index",
-              "architecture",
+              "index"
+            ]
+          },
+          {
+            "group": "Design Patterns",
+            "icon": "shapes",
+            "pages": [
               "design-patterns",
+              {
+                "group": "Patterns",
+                "icon": "puzzle-piece",
+                "pages": [
+                  "patterns/strategy",
+                  "patterns/factory",
+                  "patterns/singleton"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Technical Details",
+            "icon": "gear",
+            "pages": [
+              "architecture",
               "implementation"
             ]
           }
@@ -26,7 +48,28 @@
       }
     ],
     "global": {
-      "anchors": []
+      "anchors": [
+        {
+          "anchor": "Emirhan Atar",
+          "href": "https://github.com/Emoscuko",
+          "icon": "github"
+        },
+        {
+          "anchor": "Egemen Çamözü",
+          "href": "https://github.com/egemencamozu",
+          "icon": "github"
+        },
+        {
+          "anchor": "Yahya Efe Kuruçay",
+          "href": "https://github.com/efekurucay",
+          "icon": "github"
+        },
+        {
+          "anchor": "WhatsApp",
+          "href": "https://wa.me/905441188507",
+          "icon": "whatsapp"
+        }
+      ]
     }
   },
   "logo": {
@@ -37,11 +80,16 @@
     "links": [
       {
         "label": "GitHub",
-        "href": "https://github.com/Start-Up-Software/ChatbotForCse"
+        "href": "https://github.com/Akdeniz-CSE-Students/csebot_documentation/"
       }
     ]
   },
   "footer": {
-    "socials": {}
+    "socials": {
+      "github": "https://github.com/Akdeniz-CSE-Students/csebot_documentation/"
+    }
+  },
+  "modeToggle": {
+    "default": "dark"
   }
 }

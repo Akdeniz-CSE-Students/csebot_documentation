@@ -1,24 +1,25 @@
 ---
 title: "Project Overview"
-description: "AI-Powered Assistant for Akdeniz University CSE Students - Design Patterns Term Project"
+description: "AI-Powered Assistant for Akdeniz University CSE Students"
+icon: "house"
 ---
 
 ## CSE-351 Design Patterns Term Project
 
-**ChatbotForCse** is an AI-powered assistant designed for Akdeniz University Computer Science students. This project demonstrates the practical application of **three core design patterns**: Strategy, Factory, and Singleton.
+**ChatbotForCse** is an AI-powered assistant designed for Akdeniz University Computer Science students. This project demonstrates the practical application of **three core design patterns**.
 
 <CardGroup cols={2}>
-  <Card title="Strategy Pattern" icon="arrows-split-up-and-left">
-    Dynamic algorithm selection for intent classification and context fetching.
+  <Card title="Strategy Pattern" icon="arrows-split-up-and-left" color="#10B981" href="/design-patterns#1-strategy-pattern">
+    Dynamic algorithm selection for intent classification and context fetching
   </Card>
-  <Card title="Factory Pattern" icon="industry">
-    OCP-compliant object creation with dictionary-based registry.
+  <Card title="Factory Pattern" icon="industry" color="#3B82F6" href="/design-patterns#2-factory-pattern">
+    OCP-compliant object creation with dictionary-based registry
   </Card>
-  <Card title="Singleton Pattern" icon="database">
-    Thread-safe resource management for database and LLM clients.
+  <Card title="Singleton Pattern" icon="database" color="#8B5CF6" href="/design-patterns#3-singleton-pattern">
+    Thread-safe resource management for database and LLM clients
   </Card>
-  <Card title="Layered Architecture" icon="layer-group">
-    Clean separation of API, Service, Domain, and Data layers.
+  <Card title="Layered Architecture" icon="layer-group" color="#F59E0B" href="/architecture">
+    Clean separation of API, Service, Domain, and Data layers
   </Card>
 </CardGroup>
 
@@ -26,64 +27,110 @@ description: "AI-Powered Assistant for Akdeniz University CSE Students - Design 
 
 ## Problem Statement
 
-Students at Akdeniz University often struggle to access scattered information:
+<AccordionGroup>
+  <Accordion title="The Challenge" icon="triangle-exclamation" defaultOpen>
+    Students at Akdeniz University struggle to access scattered information:
 
-| Problem | Current Solution | Our Solution |
-|---------|------------------|--------------|
-| **Daily dining menus** | Check SKS website manually | Automated scraping + AI Q&A |
-| **Department announcements** | Monitor CSE website | Real-time sync + intelligent search |
-| **Academic questions** | Ask in WhatsApp groups | AI-powered instant responses |
+    | Problem | Current Solution | Pain Point |
+    |---------|------------------|------------|
+    | **Daily dining menus** | Check SKS website | Manual, time-consuming |
+    | **Department announcements** | Monitor CSE website | Easy to miss |
+    | **Academic questions** | Ask in WhatsApp groups | Repetitive, slow |
+  </Accordion>
 
-> [!NOTE]
-> Existing solutions require checking multiple websites or asking repetitive questions in group chats.
+  <Accordion title="Why This Project?" icon="lightbulb">
+    Existing solutions require:
+    - Checking multiple websites daily
+    - Asking repetitive questions in group chats
+    - Waiting for human responses
+
+    **Our solution**: A unified AI chatbot that aggregates all information sources.
+  </Accordion>
+</AccordionGroup>
 
 ---
 
 ## Solution: ChatbotForCse
 
-A unified **AI-powered chatbot** accessible via WhatsApp and Mobile App. It aggregates data from university sources and uses LLMs for context-aware responses.
+A unified **AI-powered chatbot** accessible via WhatsApp and Mobile App.
 
-### Key Features
-
-*   🍽️ **Dining Menus**: Scrapes weekly menus from SKS, parses images using Gemini Vision
-*   📢 **Announcements**: Tracks and delivers department news in real-time
-*   🤖 **Intelligent Q&A**: Uses Gemini and Ollama for general questions
-*   📱 **Multi-Channel**: Live on WhatsApp, API ready for mobile
+<Tabs>
+  <Tab title="Features" icon="rocket">
+    <CardGroup cols={2}>
+      <Card title="Dining Menus" icon="utensils">
+        Scrapes weekly menus from SKS, parses images using Gemini Vision
+      </Card>
+      <Card title="Announcements" icon="bullhorn">
+        Tracks and delivers department news in real-time
+      </Card>
+      <Card title="Intelligent Q&A" icon="robot">
+        Uses Gemini and Ollama for general questions
+      </Card>
+      <Card title="Multi-Channel" icon="mobile">
+        Live on WhatsApp, API ready for mobile
+      </Card>
+    </CardGroup>
+  </Tab>
+  <Tab title="Tech Stack" icon="microchip">
+    | Component | Technology |
+    |-----------|------------|
+    | Backend | FastAPI (Python) |
+    | Database | MongoDB |
+    | AI Chat | Google Gemini 2.5 Flash |
+    | AI Classification | Ollama (Qwen2 7B) |
+    | WhatsApp | WPPConnect (Node.js) |
+  </Tab>
+  <Tab title="Architecture" icon="sitemap">
+    ```mermaid
+    graph LR
+        User((User)) --> WA[WhatsApp]
+        WA --> API[FastAPI]
+        API --> DB[(MongoDB)]
+        API --> LLM[Gemini/Ollama]
+    ```
+  </Tab>
+</Tabs>
 
 ---
 
-## Design Pattern Integration
+## Design Pattern Summary
 
-This project showcases how design patterns solve real problems:
+<Note>
+  Each pattern solves a specific problem in our architecture. Click the cards above to learn more.
+</Note>
 
-```mermaid
-flowchart LR
-    subgraph "User Request"
-        A[Message] --> B{Intent?}
-    end
-    
-    subgraph "Strategy Pattern"
-        B --> C[FuzzyClassifier]
-        B --> D[OllamaClassifier]
-        B --> E[HybridClassifier]
-    end
-    
-    subgraph "Factory Pattern"
-        F[get_classifier] --> C
-        F --> D
-        F --> E
-    end
-    
-    subgraph "Singleton"
-        G[(MongoDB)]
-        H[OllamaClient]
-    end
-```
+| Pattern | Category | Problem Solved | Benefit |
+|---------|----------|----------------|---------|
+| **Strategy** | Behavioral | Multiple classification algorithms | Runtime flexibility |
+| **Factory** | Creational | Complex object creation | OCP compliance |
+| **Singleton** | Creational | Expensive resource initialization | Thread safety |
 
-**Why These Patterns?**
+---
 
-| Pattern | Problem Solved | Benefit |
-|---------|----------------|---------|
-| **Strategy** | Multiple classification algorithms needed | Runtime flexibility, easy testing |
-| **Factory** | Complex object creation logic | OCP compliance, centralized creation |
-| **Singleton** | Expensive resource initialization | Connection pooling, thread safety |
+## Quick Start
+
+<Steps>
+  <Step title="Clone Repository">
+    ```bash
+    git clone https://github.com/Akdeniz-CSE-Students/csebot_documentation/.git
+    cd ChatbotForCse
+    ```
+  </Step>
+  <Step title="Start Backend">
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+    ```
+  </Step>
+  <Step title="Start WhatsApp Client">
+    ```bash
+    cd whatsapp
+    npm install && npm start
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  See [Implementation](/implementation) for detailed setup instructions.
+</Tip>

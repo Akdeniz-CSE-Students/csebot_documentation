@@ -1,10 +1,27 @@
 ---
 title: "Implementation"
 description: "Technology stack, code structure, and key components"
+icon: "code"
 ---
 
 ## Technology Stack
 
+<CardGroup cols={2}>
+  <Card title="Backend" icon="python" color="#3776AB">
+    FastAPI with async support
+  </Card>
+  <Card title="Database" icon="database" color="#47A248">
+    MongoDB with Motor async driver
+  </Card>
+  <Card title="AI/ML" icon="brain" color="#4285F4">
+    Google Gemini 2.5 Flash
+  </Card>
+  <Card title="Classification" icon="robot" color="#FF6F00">
+    Ollama (Qwen2 7B)
+  </Card>
+</CardGroup>
+
+<Accordion title="Full Technology List" icon="list" defaultOpen>
 | Category | Technology | Purpose |
 |----------|------------|---------|
 | **Backend Framework** | FastAPI | High-performance async API |
@@ -14,183 +31,174 @@ description: "Technology stack, code structure, and key components"
 | **String Matching** | TheFuzz | Fuzzy keyword matching |
 | **WhatsApp** | WPPConnect | WhatsApp Web automation |
 | **Scheduler** | APScheduler | Data pipeline cron jobs |
+</Accordion>
 
 ---
 
 ## Key Components
 
-### 1. Intent Classifier (Strategy + Factory)
+<Tabs>
+  <Tab title="Intent Classifier" icon="brain">
+    **Location**: `backend/app/llm_engine/classifier.py`
 
-**Location**: `backend/app/llm_engine/classifier.py`
+    Combines **Strategy** and **Factory** patterns:
 
-The classifier uses both **Strategy** and **Factory** patterns:
+    ```python
+    CLASSIFIER_MAP = {
+        "ollama": _create_ollama_classifier,
+        "fuzzy": _create_fuzzy_classifier,
+        "hybrid": _create_hybrid_classifier,
+    }
 
-```python
-# Factory with OCP-compliant dictionary map
-CLASSIFIER_MAP = {
-    "ollama": _create_ollama_classifier,
-    "fuzzy": _create_fuzzy_classifier,
-    "hybrid": _create_hybrid_classifier,
-}
+    def get_classifier() -> IntentClassifier:
+        method = settings.CLASSIFICATION_METHOD
+        factory_fn = CLASSIFIER_MAP.get(method)
+        return factory_fn()
+    ```
 
-def get_classifier() -> IntentClassifier:
-    method = settings.CLASSIFICATION_METHOD  # From .env
-    factory_fn = CLASSIFIER_MAP.get(method, _create_fuzzy_classifier)
-    return factory_fn()
-```
+    <Tip>
+      Configure via `.env`: `CLASSIFICATION_METHOD=hybrid`
+    </Tip>
+  </Tab>
 
-**Configuration** (`.env`):
-```env
-CLASSIFICATION_METHOD=hybrid  # Options: ollama, fuzzy, hybrid
-FUZZY_THRESHOLD=80
-```
+  <Tab title="Context Strategies" icon="arrows-split-up-and-left">
+    **Location**: `backend/app/strategies/context_strategies.py`
 
-### 2. Context Strategies
+    Each strategy encapsulates data fetching + LLM formatting:
 
-**Location**: `backend/app/strategies/context_strategies.py`
+    ```python
+    class DiningStrategy(ContextStrategy):
+        async def fetch(self, query: str) -> str:
+            raw_menus = await fetch_dining_data_raw()
+            return self._format_for_llm(raw_menus)
+    ```
 
-Each strategy encapsulates data fetching + LLM formatting:
+    | Strategy | Data Source |
+    |----------|-------------|
+    | `DiningStrategy` | MongoDB menus collection |
+    | `AnnouncementStrategy` | MongoDB announcements |
+    | `GeneralStrategy` | No database (fallback) |
+  </Tab>
 
-```python
-class DiningStrategy(ContextStrategy):
-    async def fetch(self, query: str) -> str:
-        raw_menus = await fetch_dining_data_raw()  # Raw data
-        return self._format_for_llm(raw_menus)     # LLM-ready format
-    
-    def _format_for_llm(self, menus) -> str:
-        # Turkish date localization (BUGÜN, YARIN)
-        # Emoji formatting for readability
-        return formatted_string
-```
+  <Tab title="MongoDB Singleton" icon="database">
+    **Location**: `backend/app/db/mongo.py`
 
-### 3. MongoDB Singleton
+    Thread-safe singleton with lazy initialization:
 
-**Location**: `backend/app/db/mongo.py`
+    ```python
+    class MongoDB:
+        def __init__(self):
+            self._client = None
+            self._initialized = False
+        
+        @property
+        def client(self):
+            if self._client is None:
+                raise RuntimeError("Not connected")
+            return self._client
 
-Thread-safe singleton with encapsulated state:
+    db = MongoDB()  # Global singleton
+    ```
 
-```python
-class MongoDB:
-    def __init__(self):
-        self._client = None
-        self._db = None
-        self._initialized = False
-    
-    @property
-    def client(self):
-        if self._client is None:
-            raise RuntimeError("Not connected")
-        return self._client
+    <Warning>
+      Always call `connect_to_mongo()` in app startup event!
+    </Warning>
+  </Tab>
 
-db = MongoDB()  # Global singleton
-```
+  <Tab title="Data Pipeline" icon="arrows-rotate">
+    **Location**: `data-pipeline/`
 
-### 4. Data Pipeline
+    | Job | Schedule | Action |
+    |-----|----------|--------|
+    | **Menu Sync** | Daily 8:00 | Scrape → Gemini Vision → MongoDB |
+    | **Announcement Sync** | Hourly | Scrape → Parse → MongoDB |
 
-**Location**: `data-pipeline/`
-
-Autonomous background service:
-
-| Job | Schedule | Action |
-|-----|----------|--------|
-| **Menu Sync** | Daily 8:00 | Scrape SKS → Gemini Vision → MongoDB |
-| **Announcement Sync** | Hourly | Scrape CSE → Parse → MongoDB |
-
-```python
-# Example: Menu extraction with Gemini
-image_bytes = download_menu_image()
-json_menu = await gemini_client.parse_image(image_bytes, MENU_SCHEMA)
-await db.menus.insert_one(json_menu)
-```
-
-### 5. WhatsApp Integration
-
-**Location**: `whatsapp/`
-
-Node.js service using WPPConnect. Acts as a "dumb terminal":
-
-```javascript
-// Receives message → Forwards to Python → Sends reply
-client.onMessage(async (message) => {
-    const response = await axios.post(BACKEND_URL + '/api/chat', {
-        message: message.body,
-        group_id: message.from
-    });
-    await client.sendText(message.from, response.data.reply);
-});
-```
-
-> [!TIP]
-> This separation allows updating AI logic without restarting WhatsApp (which requires QR scanning).
+    ```python
+    # Menu extraction with Gemini Vision
+    image_bytes = download_menu_image()
+    json_menu = await gemini_client.parse_image(image_bytes)
+    await db.menus.insert_one(json_menu)
+    ```
+  </Tab>
+</Tabs>
 
 ---
 
 ## Configuration
 
-### Environment Variables
+<Tabs>
+  <Tab title="Environment Variables" icon="gear">
+    ```env
+    # Database
+    MONGO_CONNECTION_STRING=mongodb://localhost:27017
+    MONGO_DB_NAME=chatbot
 
-```env
-# Database
-MONGO_CONNECTION_STRING=mongodb://localhost:27017
-MONGO_DB_NAME=chatbot
+    # AI Services
+    GEMINI_API_KEY=your_api_key
+    OLLAMA_BASE_URL=http://localhost:11434
+    OLLAMA_MODEL=qwen2:7b
 
-# AI Services
-GEMINI_API_KEY=your_api_key
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen2:7b
+    # Classification
+    CLASSIFICATION_METHOD=hybrid
+    FUZZY_THRESHOLD=80
+    ```
+  </Tab>
+  <Tab title="Pydantic Settings" icon="python">
+    ```python
+    from pydantic_settings import BaseSettings
 
-# Classification
-CLASSIFICATION_METHOD=hybrid
-FUZZY_THRESHOLD=80
-```
+    class Settings(BaseSettings):
+        MONGO_CONNECTION_STRING: str
+        GEMINI_API_KEY: str
+        CLASSIFICATION_METHOD: Literal["ollama", "fuzzy", "hybrid"] = "hybrid"
+        
+        model_config = SettingsConfigDict(env_file=".env")
 
-### Pydantic Settings
-
-```python
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    MONGO_CONNECTION_STRING: str
-    GEMINI_API_KEY: str
-    CLASSIFICATION_METHOD: Literal["ollama", "fuzzy", "hybrid"] = "hybrid"
-    
-    model_config = SettingsConfigDict(env_file=".env")
-
-settings = Settings()
-```
+    settings = Settings()
+    ```
+  </Tab>
+</Tabs>
 
 ---
 
 ## Running the Project
 
-### Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-### WhatsApp Client
-
-```bash
-cd whatsapp
-npm install
-npm start  # First run requires QR scan
-```
-
-### Data Pipeline
-
-```bash
-cd data-pipeline
-pip install -r requirements.txt
-python jobs/run_scheduler.py
-```
+<Steps>
+  <Step title="Clone & Setup">
+    ```bash
+    git clone https://github.com/Akdeniz-CSE-Students/csebot_documentation/.git
+    cd ChatbotForCse
+    cp .env.example .env  # Configure your API keys
+    ```
+  </Step>
+  <Step title="Start Backend">
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+    ```
+  </Step>
+  <Step title="Start WhatsApp Client">
+    ```bash
+    cd whatsapp
+    npm install
+    npm start  # First run requires QR scan
+    ```
+  </Step>
+  <Step title="Start Data Pipeline (Optional)">
+    ```bash
+    cd data-pipeline
+    pip install -r requirements.txt
+    python jobs/run_scheduler.py
+    ```
+  </Step>
+</Steps>
 
 ---
 
 ## Testing
 
+<Accordion title="Running Tests" icon="flask-vial">
 ```bash
 # Run classifier tests
 cd backend
@@ -200,12 +208,15 @@ pytest test_classifier.py -v
 **Mock injection example:**
 ```python
 def test_hybrid_fallback():
-    # Reset singleton for clean test
-    reset_classifier()
+    reset_classifier()  # Reset singleton
     
-    # Factory creates fresh instance with test config
     classifier = get_classifier()
     result = await classifier.classify("test message")
     
     assert result in ["dining", "announcement", "general"]
 ```
+</Accordion>
+
+<Note>
+  The `reset_classifier()` function allows injecting mock classifiers for testing.
+</Note>

@@ -1,0 +1,181 @@
+---
+title: "Strategy Pattern"
+description: "Behavioral pattern for dynamic algorithm selection"
+icon: "arrows-split-up-and-left"
+---
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Category" icon="tag">
+    **Behavioral** Design Pattern
+  </Card>
+  <Card title="Purpose" icon="bullseye">
+    Encapsulate interchangeable algorithms
+  </Card>
+</CardGroup>
+
+---
+
+## Problem Statement
+
+<AccordionGroup>
+  <Accordion title="The Challenge" icon="circle-question" defaultOpen>
+    The chatbot needs to determine user intent and fetch appropriate context. We needed:
+
+    1. **Multiple classification algorithms**: Keyword matching vs LLM analysis
+    2. **Multiple context sources**: Dining, announcements, or general
+    3. **Runtime flexibility**: Switch via configuration without code changes
+
+    > Without Strategy Pattern, we would need complex `if-elif` chains that violate the Open-Closed Principle.
+  </Accordion>
+
+  <Accordion title="Why Strategy Pattern?" icon="lightbulb">
+    | Alternative | Problem |
+    |-------------|---------|
+    | If-elif chains | Violates OCP, hard to maintain |
+    | Inheritance | Tight coupling, less flexible |
+    | **Strategy Pattern** | ✅ Encapsulates algorithms, easy to swap |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solution 1: Intent Classification
+
+<Tabs>
+  <Tab title="UML Diagram" icon="diagram-project">
+    ```mermaid
+    classDiagram
+        class IntentClassifier {
+            <<abstract>>
+            +classify(message: str) str
+        }
+        
+        class FuzzyClassifier {
+            -threshold: int
+            -dining_keywords: List
+            +classify(message: str) str
+        }
+        
+        class OllamaClassifier {
+            -client: OllamaClient
+            +classify(message: str) str
+        }
+        
+        class HybridClassifier {
+            -ollama: OllamaClassifier
+            -fuzzy: FuzzyClassifier
+            +classify(message: str) str
+        }
+        
+        IntentClassifier <|.. FuzzyClassifier : implements
+        IntentClassifier <|.. OllamaClassifier : implements
+        IntentClassifier <|.. HybridClassifier : implements
+        HybridClassifier o-- OllamaClassifier : primary
+        HybridClassifier o-- FuzzyClassifier : fallback
+    ```
+  </Tab>
+  <Tab title="Code Example" icon="code">
+    ```python
+    # Abstract Base Class (Strategy Interface)
+    class IntentClassifier(ABC):
+        @abstractmethod
+        async def classify(self, message: str) -> str:
+            """Returns: 'dining', 'announcement', or 'general'"""
+            pass
+
+    # Concrete Strategy: Hybrid
+    class HybridClassifier(IntentClassifier):
+        def __init__(self, ollama_classifier, fuzzy_classifier):
+            self.ollama = ollama_classifier
+            self.fuzzy = fuzzy_classifier
+
+        async def classify(self, message: str) -> str:
+            try:
+                return await asyncio.wait_for(
+                    self.ollama.classify(message), timeout=5.0
+                )
+            except Exception:
+                return await self.fuzzy.classify(message)
+    ```
+  </Tab>
+  <Tab title="File Locations" icon="folder">
+    | Strategy | File |
+    |----------|------|
+    | `IntentClassifier` | `llm_engine/classifiers/base.py` |
+    | `FuzzyClassifier` | `llm_engine/classifiers/fuzzy_classifier.py` |
+    | `OllamaClassifier` | `llm_engine/classifiers/ollama_classifier.py` |
+    | `HybridClassifier` | `llm_engine/classifiers/hybrid_classifier.py` |
+  </Tab>
+</Tabs>
+
+---
+
+## Solution 2: Context Fetching
+
+<Tabs>
+  <Tab title="UML Diagram" icon="diagram-project">
+    ```mermaid
+    classDiagram
+        class ContextStrategy {
+            <<abstract>>
+            +fetch(query: str) str
+        }
+        
+        class DiningStrategy {
+            -MONTHS_TR: List
+            +fetch(query: str) str
+            -_format_for_llm(menus) str
+        }
+        
+        class AnnouncementStrategy {
+            +fetch(query: str) str
+        }
+        
+        class GeneralStrategy {
+            +fetch(query: str) str
+        }
+        
+        ContextStrategy <|.. DiningStrategy
+        ContextStrategy <|.. AnnouncementStrategy
+        ContextStrategy <|.. GeneralStrategy
+    ```
+  </Tab>
+  <Tab title="Code Example" icon="code">
+    ```python
+    class DiningStrategy(ContextStrategy):
+        async def fetch(self, query: str) -> str:
+            raw_menus = await fetch_dining_data_raw()
+            return self._format_for_llm(raw_menus)
+        
+        def _format_for_llm(self, menus: List[Dict]) -> str:
+            # Turkish localization (BUGÜN, YARIN)
+            # Emoji formatting for readability
+            return formatted_string
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  Each Strategy owns its formatting logic. The Service layer returns raw `List[Dict]`, and the Strategy transforms it into an LLM-optimized string.
+</Note>
+
+---
+
+## Benefits
+
+<CardGroup cols={2}>
+  <Card title="Open-Closed Principle" icon="lock-open">
+    Add new classifiers without modifying existing code
+  </Card>
+  <Card title="Single Responsibility" icon="bullseye">
+    Each strategy handles one algorithm
+  </Card>
+  <Card title="Runtime Flexibility" icon="sliders">
+    Switch via `.env` configuration
+  </Card>
+  <Card title="Testability" icon="flask-vial">
+    Mock strategies easily in unit tests
+  </Card>
+</CardGroup>
